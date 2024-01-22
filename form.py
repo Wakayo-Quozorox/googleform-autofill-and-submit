@@ -43,6 +43,19 @@ def get_fb_public_load_data(url: str):
         return None
     return extract_script_variables(ALL_DATA_FIELDS, response.text)
 
+def submit(url, data):
+    response_url = get_form_response_url(url)
+
+    try:
+        res = requests.post(response_url, data = data)
+        if res.status_code != 200:
+            # TODO: show error message
+            raise Exception("Error! Can't submit form", res.status_code)
+        return True
+    except Exception as e:
+        print("Error!", e)
+        return False
+
 """ ------ MAIN LOGIC ------ """
 def parse_form_entries(url: str, only_required = False):
     """
