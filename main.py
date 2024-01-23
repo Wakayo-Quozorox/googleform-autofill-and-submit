@@ -14,9 +14,9 @@ if not exists("Local/form_data.txt"):
     # Tell user to edit the file to add the oriented values, 
     # or to restart the script to generate random values
     print("Please edit Local/form_data.txt to add the oriented values, or restart the script to generate random values")
-else:
-    # Read form extract
-    possible_data = form.check_form_extract()
-    # Compute random values
-    filled_form = form.fill_form_random(possible_data)
-    # Send result to form
+# else:
+#     # Read form extract
+#     possible_data = form.check_form_extract()
+#     # Compute random values
+#     filled_form = form.fill_form_random(possible_data)
+#     # Send result to form

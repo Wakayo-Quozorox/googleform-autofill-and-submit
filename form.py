@@ -26,11 +26,12 @@ def get_form_response_url(url: str):
         url += 'formResponse'
     return url
 
-def get_form_url(path= "Local/form_data.txt"):
+def get_form_url(path= "Local/URL.txt"):
     try:
         url = open(path, "r").readline()
     except IOError:
         print("Error: File not found or unable to read file.")
+        exit()
     except Exception as e:
         print("An unexpected error occurred:", e)
         exit()
@@ -150,8 +151,20 @@ def generate_form_extract():
     url = get_form_url()
 
     form_data = parse_form_entries(url)
+    result = ""
+    result += f"# Add final percentage wanted for the specific options with this format:\n# Option:percentage\n# Example:\n# Option 1:10\n# Option 2:40\n# Option 3:50\n\n"
+    for question in form_data:
+        result += f"{question['type']}{question['container_name']}{': ' + question['name'] if question['name'] else ''} {'(required)' * question['required']}\n"
+        if question['options']:
+            result += f"  Options:\n"
+            for option in question['options']:
+                result += f"    {option}\n"
+        else:
+            result += f"  Option: any text\n"
+        result += "\n"
+
     with open("Local/form_data.txt", "w") as file:
-        file.write(generate_form_request_dict(form_data, with_comment=True))
+        file.write(result)
         print(f"Saved to Local/form_data.txt", flush=True)
 
 if __name__ == "__main__":
