@@ -17,6 +17,7 @@ except IOError:
     print("Error: File not found or unable to read file.")
 except Exception as e:
     print("An unexpected error occurred:", e)
+    exit()
 
 # Get form data from URL
 form_data = form.parse_form_entries(url)

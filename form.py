@@ -26,6 +26,15 @@ def get_form_response_url(url: str):
         url += 'formResponse'
     return url
 
+def get_form_url(path= "Local/form_data.txt"):
+    try:
+        url = open(path, "r").readline()
+    except IOError:
+        print("Error: File not found or unable to read file.")
+    except Exception as e:
+        print("An unexpected error occurred:", e)
+        exit()
+    return url
 
 def extract_script_variables(name :str, html: str):
     pattern = re.compile(r'var\s' + name + r'\s=\s(.*?);')
@@ -136,8 +145,14 @@ def generate_form_request_dict(entries, with_comment: bool = True):
     result += "}"
     return result
 
-        
+def generate_form_extract():
+    # Get data from URL and save it to a file
+    url = get_form_url()
 
+    form_data = parse_form_entries(url)
+    with open("Local/form_data.txt", "w") as file:
+        file.write(generate_form_request_dict(form_data, with_comment=True))
+        print(f"Saved to Local/form_data.txt", flush=True)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Google Form Autofill and Submit")
