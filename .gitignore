@@ -1,1 +1,11 @@
+# Python
+*.pyc
+__pycache__/
+venv/
+env/
+dist/
+build/
+*.egg-info/
+
+# User-specific files
 Local/

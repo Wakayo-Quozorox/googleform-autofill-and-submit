@@ -20,22 +20,24 @@ except Exception as e:
     print("An unexpected error occurred:", e)
 
 # Get form data from URL
-datas = form.parse_form_entries(url)
+form_data = form.parse_form_entries(url)
 
 # Select random value for each question
-result = {}
+filled_form = {}
 
-for data in datas:
-    if data["type"] == 2:   # Multiple choice
+for question in form_data:
+    if question["type"] == 2:   # Multiple choice
         # Choose a random value from the list of options
-        result["entry."+str(data["id"])] = random.choice(data["options"])
-    elif data["type"] == 4: # Checkbox
+        filled_form[f"entry.{question['id']}"] = random.choice(question["options"])
+    elif question["type"] == 4: # Checkbox
         # Choose a random number of options from the list of options
-        result["entry."+str(data["id"])] = list(set(random.choices(data["options"], k=random.randint(1, len(data["options"])))))
-
-# Print result
-for i in range(len(result)):
-    print(f"{datas[i]['container_name']}: {result["entry."+str(datas[i]["id"])]}")
+        num_options = random.randint(1, len(question["options"]))
+        filled_form[f"entry.{question['id']}"] = random.sample(question["options"], num_options)
+    else:
+        print(f"Error: Question type {question['type']} not supported")
+        exit()
+    # Print result
+    print(f"{question['container_name']}: {filled_form["entry."+str(question["id"])]}")
 
 # Send result to form
-form.submit(url, result)
+form.submit(url, filled_form)
