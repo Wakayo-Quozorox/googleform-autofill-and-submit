@@ -5,6 +5,7 @@
 from os.path import exists
 import form
 import random
+import json
 
 # Test if "Local/form_data.txt" exists
 if not exists("Local/form_data.txt"):
@@ -20,3 +21,15 @@ if not exists("Local/form_data.txt"):
 #     # Compute random values
 #     filled_form = form.fill_form_random(possible_data)
 #     # Send result to form
+    
+    filled_form = {}
+    data = json.load(open("Local/form.json", "r"))
+    # Test if weights are valid
+    if not form.check_options_weights(data):
+        print("Error: Invalid weights")
+        return
+    # Build response
+    for question in data:
+        if question['type'] == 2:   # Multiple choice
+            # Choose a random value from the list of options
+            filled_form[f"entry.{question['id']}"] = random.choices(question["options"], weights=[option['weight'] for option in question['options']])[0]['option']

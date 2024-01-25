@@ -9,6 +9,7 @@
 import argparse
 import json
 import re
+import random
 
 import requests
 
@@ -19,6 +20,15 @@ ALL_DATA_FIELDS = "FB_PUBLIC_LOAD_DATA_"
 """ --------- Helper functions ---------  """
 
 def get_form_response_url(url: str):
+    """
+    Converts a Google Form URL to the corresponding form response URL.
+
+    Args:
+        url (str): The Google Form URL.
+
+    Returns:
+        str: The form response URL.
+    """
     url = url.replace('/viewform', '/formResponse')
     if not url.endswith('/formResponse'):
         if not url.endswith('/'):
@@ -27,6 +37,19 @@ def get_form_response_url(url: str):
     return url
 
 def get_form_url(path= "Local/URL.txt"):
+    """
+    Retrieves the URL of the form from a specified file.
+
+    Args:
+        path (str): The path to the file containing the URL. Defaults to "Local/URL.txt".
+
+    Returns:
+        str: The URL of the form.
+
+    Raises:
+        IOError: If the file is not found or unable to be read.
+        Exception: If an unexpected error occurs.
+    """
     try:
         url = open(path, "r").readline()
     except IOError:
@@ -38,6 +61,16 @@ def get_form_url(path= "Local/URL.txt"):
     return url
 
 def extract_script_variables(name :str, html: str):
+    """
+    Extracts the value of a script variable from an HTML string.
+
+    Parameters:
+    name (str): The name of the script variable.
+    html (str): The HTML string to search for the script variable.
+
+    Returns:
+    dict or None: The value of the script variable as a dictionary, or None if the variable is not found.
+    """
     pattern = re.compile(r'var\s' + name + r'\s=\s(.*?);')
     match = pattern.search(html)
     if not match:
@@ -46,6 +79,16 @@ def extract_script_variables(name :str, html: str):
     return json.loads(value_str)
 
 def get_fb_public_load_data(url: str):
+    """
+    Retrieves form data from a given URL.
+
+    Args:
+        url (str): The URL of the form.
+
+    Returns:
+        dict: A dictionary containing the extracted form data.
+            Returns None if there was an error retrieving the data.
+    """
     response = requests.get(url, timeout=10)
     if response.status_code != 200:
         print("Error! Can't get form data", response.status_code)
@@ -53,10 +96,20 @@ def get_fb_public_load_data(url: str):
     return extract_script_variables(ALL_DATA_FIELDS, response.text)
 
 def submit(url, data):
+    """
+    Submits form data to the specified URL.
+
+    Args:
+        url (str): The URL of the form response endpoint.
+        data (dict): The form data to be submitted.
+
+    Returns:
+        bool: True if the form submission is successful, False otherwise.
+    """
     response_url = get_form_response_url(url)
 
     try:
-        res = requests.post(response_url, data = data)
+        res = requests.post(response_url, data=data)
         if res.status_code != 200:
             # TODO: show error message
             raise Exception("Error! Can't submit form", res.status_code)
@@ -128,6 +181,11 @@ def get_form_submit_request(url: str, output = "console", only_required = False,
             print(f"Saved to {output}", flush = True)
     pass
 
+def generate_json(entries):
+    with open("Local/form.json", "w") as file:
+        json.dump(entries, file, indent=4)
+        print(f"Saved to Local/form.json", flush=True)
+
 def generate_form_request_dict(entries, with_comment: bool = True):
     """ Generate a dict of form request data from entries"""
     result = "{\n"
@@ -152,20 +210,54 @@ def generate_form_extract():
 
     form_data = parse_form_entries(url)
     result = ""
-    result += f"# Add final percentage wanted for the specific options with this format:\n# Option:percentage\n# Example:\n# Option 1:10\n# Option 2:40\n# Option 3:50\n\n"
+    result += f"# Replace \"XX\" with wanted final percentage for oriented answers\n Example:\n# Option 1:10\n# Option 2:40\n# Option 3:50\n\n"
     for question in form_data:
-        result += f"{question['type']}{question['container_name']}{': ' + question['name'] if question['name'] else ''} {'(required)' * question['required']}\n"
-        if question['options']:
-            result += f"  Options:\n"
+        if 'options' in question:
             for option in question['options']:
-                result += f"    {option}\n"
+                question['options'] = {['option']: option, ['weight']: 'XX'}
         else:
-            result += f"  Option: any text\n"
-        result += "\n"
+            question['options'] = "!ANY_TEXT"
+    result += json.dumps(form_data, indent=4)
 
     with open("Local/form_data.txt", "w") as file:
         file.write(result)
         print(f"Saved to Local/form_data.txt", flush=True)
+
+def build_response():
+    
+        
+
+def check_options_weights(data):
+    total_weight = 0
+    weight_not_set_flag = False
+    exit_flag = False
+    for question in data:
+        if 'options' in question:
+            for option in question['options']:
+                if 'weight' not in option:
+                    print(f"Error: Weight not found for {option['option']}")
+                    exit_flag = True
+                elif option['weight'] > 100:
+                    print(f"Error: Weight for {option['option']} is greater than 100")
+                    exit_flag = True
+                elif option['weight'] < 0:
+                    print(f"Error: Weight for {option['option']} is less than 0")
+                    exit_flag = True
+                elif option['weight'] == 'XX':
+                    print(f"Warning: Weight for {option['option']} is not set. Random value will be generated")
+                    weight_not_set_flag = True
+                else:
+                    total_weight += option['weight']
+            if weight_not_set_flag and total_weight > 100:
+                print(f"Error: Total weight is greater than 100")
+                exit_flag = True
+            elif not weight_not_set_flag and total_weight != 100:
+                print(f"Error: Total weight is not 100")
+                exit_flag = True
+        if exit_flag:
+            print(f"Error in question : {question['container_name']}")
+            return False
+    return True
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Google Form Autofill and Submit")
