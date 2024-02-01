@@ -210,53 +210,56 @@ def generate_form_extract():
 
     form_data = parse_form_entries(url)
     result = ""
-    result += f"# Replace \"XX\" with wanted final percentage for oriented answers\n Example:\n# Option 1:10\n# Option 2:40\n# Option 3:50\n\n"
+    #result += f"# Replace \"XX\" with wanted final percentage for oriented answers\n Example:\n# Option 1:10\n# Option 2:40\n# Option 3:50\n\n"
     for question in form_data:
         if 'options' in question:
+            new_option = []
             for option in question['options']:
-                question['options'] = {['option']: option, ['weight']: 'XX'}
+                new_option.append({
+                    "option": option,
+                    "weight": "XX"
+                })
+            question['options'] = new_option       
         else:
             question['options'] = "!ANY_TEXT"
     result += json.dumps(form_data, indent=4)
 
-    with open("Local/form_data.txt", "w") as file:
+    with open("Local/form.json", "w") as file:
         file.write(result)
         print(f"Saved to Local/form_data.txt", flush=True)
 
-def build_response():
-    
-        
-
 def check_options_weights(data):
-    total_weight = 0
     weight_not_set_flag = False
     exit_flag = False
     for question in data:
-        if 'options' in question:
-            for option in question['options']:
-                if 'weight' not in option:
-                    print(f"Error: Weight not found for {option['option']}")
+        total_weight = 0
+        if question['type'] == 2:
+            if 'options' in question:
+                for option in question['options']:
+                    if 'weight' not in option:
+                        print(f"Error: Weight not found for {option['option']}")
+                        exit_flag = True
+                    elif option['weight'] == 'XX':
+                        print(f"Warning: Weight for {option['option']} is not set. Random value will be generated")
+                        weight_not_set_flag = True
+                    elif int(option['weight']) > 100:
+                        print(f"Error: Weight for {option['option']} is greater than 100")
+                        exit_flag = True
+                    elif int(option['weight']) < 0:
+                        print(f"Error: Weight for {option['option']} is less than 0")
+                        exit_flag = True
+                    else:
+                        total_weight += int(option['weight'])
+                        print("Total weight:", total_weight)
+                if weight_not_set_flag and total_weight > 100:
+                    print(f"Error: Total weight is greater than 100")
                     exit_flag = True
-                elif option['weight'] > 100:
-                    print(f"Error: Weight for {option['option']} is greater than 100")
+                elif not weight_not_set_flag and total_weight != 100:
+                    print(f"Error: Total weight is not 100")
                     exit_flag = True
-                elif option['weight'] < 0:
-                    print(f"Error: Weight for {option['option']} is less than 0")
-                    exit_flag = True
-                elif option['weight'] == 'XX':
-                    print(f"Warning: Weight for {option['option']} is not set. Random value will be generated")
-                    weight_not_set_flag = True
-                else:
-                    total_weight += option['weight']
-            if weight_not_set_flag and total_weight > 100:
-                print(f"Error: Total weight is greater than 100")
-                exit_flag = True
-            elif not weight_not_set_flag and total_weight != 100:
-                print(f"Error: Total weight is not 100")
-                exit_flag = True
-        if exit_flag:
-            print(f"Error in question : {question['container_name']}")
-            return False
+            if exit_flag:
+                print(f"Error in question : {question['container_name']}")
+                return False
     return True
 
 if __name__ == "__main__":
