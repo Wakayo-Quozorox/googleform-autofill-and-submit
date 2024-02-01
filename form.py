@@ -204,9 +204,7 @@ def generate_form_request_dict(entries, with_comment: bool = True):
     result += "}"
     return result
 
-def generate_form_extract():
-    # Get data from URL and save it to a file
-    url = get_form_url()
+def generate_form_extract(url: str):
 
     form_data = parse_form_entries(url)
     result = ""
@@ -227,6 +225,7 @@ def generate_form_extract():
     with open("Local/form.json", "w") as file:
         file.write(result)
         print(f"Saved to Local/form_data.txt", flush=True)
+    return url
 
 def check_options_weights(data):
     weight_not_set_flag = False
@@ -250,7 +249,7 @@ def check_options_weights(data):
                         exit_flag = True
                     else:
                         total_weight += int(option['weight'])
-                        print("Total weight:", total_weight)
+                        #print("Total weight:", total_weight)
                 if weight_not_set_flag and total_weight > 100:
                     print(f"Error: Total weight is greater than 100")
                     exit_flag = True
